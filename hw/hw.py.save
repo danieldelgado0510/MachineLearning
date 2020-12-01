@@ -1,0 +1,60 @@
+import math
+import random
+
+class input_node:
+	weights = [0.5,0.5,0.5,0.5,0.5]
+
+class node_1:
+	weights = [0.5,0.5,0.5,0.5,0.5]
+
+class node_2:
+	weights = [0.5]
+
+input_layer = []
+for i in range(2):
+	x = input_node()
+	input_layer.append( x )
+
+layer_1 = []
+for i in range(5):
+	x = node_1()
+	layer_1.append(x)
+
+layer_2 = []
+for i in range(5):
+	x = node_2()
+	layer_2.append(x)
+
+
+def generate_points():
+	array = []
+	for i in range(100):
+		x = random.uniform(0,1)
+		y = random.uniform(0,1)
+		array.append( [x, y] )
+	return array
+
+def concept( array ):
+	x, y = array
+	circ = ( ( x - 0.5 ) * ( x - 0.5 ) ) + ( ( y - 0.6 ) * ( y - 0.6 ) )
+	r_s = 0.4 * 0.4
+	if( circ < r_s ):
+		return True
+	else: return False
+
+train_points = generate_points()
+train_labels = []
+test_points = generate_points()
+test_labels = []
+
+for i in train_points:
+	train_labels.append( concept(i) )
+	print( concept( i ) )
+
+for i in test_points:
+	test_labels.append( concept(i) )
+	print( concept( i ) )
+
+
+def train():
+	for 
