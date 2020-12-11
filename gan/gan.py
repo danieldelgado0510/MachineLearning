@@ -1,6 +1,6 @@
-#Generative Adversarial Network 
-#Implemented using TensorFlow
-
+#Generative Adversarial Network implemented using TensorFlow
+#CAP6610
+#Daniel Delgado
 import tensorflow as tf
 import glob
 import imageio
@@ -13,17 +13,26 @@ import time
 
 from IPython import display
 
+#load MNIST data
 (train_images, train_labels), (_, _) = tf.keras.datasets.mnist.load_data()
 
 train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype('float32')
 train_images = (train_images - 127.5) / 127.5
 
+#print( train_images.shape )
+#print( train_labels.shape )
+
 BUFFER_SIZE = 60000
 BATCH_SIZE = 256
+#BATCH_SIZE = 32
 
 train_dataset = tf.data.Dataset.from_tensor_slices(train_images).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
 
+#print( train_dataset.shape )
+
+#GAN Generator and Discriminator
 def make_generator_model():
+	#layer 1
 	model = tf.keras.Sequential()
 	model.add(layers.Dense(7*7*256, use_bias=False, input_shape=(100,)))
 	model.add(layers.BatchNormalization())
@@ -32,16 +41,19 @@ def make_generator_model():
 	model.add(layers.Reshape((7,7,256)))
 	assert model.output_shape == (None, 7, 7, 256) # batch size
 
+	#layer 2
 	model.add(layers.Conv2DTranspose(128, (5,5), strides=(1,1), padding='same', use_bias=False))
 	assert model.output_shape == (None, 7, 7, 128)
 	model.add(layers.BatchNormalization())
 	model.add(layers.LeakyReLU())
 
+	#layer 3
 	model.add(layers.Conv2DTranspose(64, (5,5), strides=(2,2), padding='same', use_bias=False))
 	assert model.output_shape == (None, 14, 14, 64)
 	model.add(layers.BatchNormalization())
 	model.add(layers.LeakyReLU())
 
+	#layer 4
 	model.add(layers.Conv2DTranspose(1, (5,5), strides=(2,2), padding='same', use_bias=False, activation='tanh'))
 	assert model.output_shape == (None, 28, 28, 1)
 
@@ -49,16 +61,20 @@ def make_generator_model():
 
 def make_discriminator_model():
 	model = tf.keras.Sequential()
-	model.add(layers.Conv2D(64, (5,5), strides=(2,2), padding='same', input_shape=[28,28,1]))
 
+	#layer 1
+	model.add(layers.Conv2D(64, (5,5), strides=(2,2), padding='same', input_shape=[28,28,1]))
 	model.add(layers.LeakyReLU())
 	model.add(layers.Dropout(0.3))
 
+	#layer 2
 	model.add(layers.Conv2D(128, (5,5), strides=(2,2), padding='same'))
 	model.add(layers.LeakyReLU())
 	model.add(layers.Dropout(0.3))
 
 	model.add(layers.Flatten())
+
+	#layer 3
 	model.add(layers.Dense(1))
 
 	return model
@@ -69,14 +85,15 @@ noise = tf.random.normal([1,100])
 generated_image = generator(noise, training=False)
 
 plt.imshow(generated_image[0,:,:,0], cmap='gray')
-plt.savefig('test.png')
+#plt.savefig('test.png')
 
 discriminator = make_discriminator_model()
 decision = discriminator(generated_image)
-print(decision)
+#print(decision)
 
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
+#Loss Functions
 def discriminator_loss(real_output, fake_output):
 	real_loss = cross_entropy(tf.ones_like(real_output), real_output)
 	fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
@@ -129,6 +146,7 @@ def train(dataset, epochs):
 		display.clear_output(wait=True)
 		generate_and_save_images(generator, epoch+1, seed)
 
+		#save images after each 15 epochs
 		if(epoch+1)%15 == 0:
 			checkpoint.save(file_prefix = checkpoint_prefix)
 
@@ -149,4 +167,5 @@ def generate_and_save_images(model, epoch, test_input):
 
 	plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
 
+#Run model
 train(train_dataset, EPOCHS)
